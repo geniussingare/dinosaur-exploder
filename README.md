@@ -122,7 +122,7 @@ mvn javafx:run
 
 # Or build with desktop profile
 mvn clean package -Pdesktop
-java -jar target/dinosaur-exploder-2.0.0.jar
+java -jar target/dinosaur-exploder-2.1.0.jar
 
 # Or using an IDE: 
 # - Open project in IntelliJ
@@ -131,6 +131,18 @@ java -jar target/dinosaur-exploder-2.0.0.jar
 # 4. (Optional but HIGHLY recommanded) Install git hooks for code quality checks
 ./scripts/install-hooks.sh
 ```
+
+> [!IMPORTANT]
+> **VS Code users:** don't start the game with the Java **Run/Debug** button. Part of the code
+> (`src/main/kotlin/.../constants/Direction.kt`) is Kotlin, and VS Code's Java extension only compiles Java.
+> The menus load, but the game crashes as soon as you press Start with:
+> `Unresolved compilation problems: The import com.dinosaur.dinosaurexploder.constants.Direction cannot be resolved`.
+>
+> Run it through Maven instead, which compiles both Java and Kotlin:
+> ```bash
+> mvn clean javafx:run
+> ```
+> Keep the `clean`: after a Run-button attempt, `target/` holds broken class files that Maven may otherwise reuse.
 
 #### Testing
 ```bash
