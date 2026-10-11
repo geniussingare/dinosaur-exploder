@@ -34,7 +34,7 @@ public class PlayerCannonUpgradeCollision implements CollisionHandlerInterface {
           }
           AudioManager.getInstance().playSound(GameConstants.HEART_HIT_SOUND);
           player.upgradeCannon();
-          gameActions.showCannonUpgradeMessage();
+          gameActions.showPowerUpMessage("cannon_upgraded");
         });
   }
 }

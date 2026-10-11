@@ -13,6 +13,7 @@ import com.almasb.fxgl.entity.Entity;
 import com.dinosaur.dinosaurexploder.components.LevelProgressBarComponent;
 import com.dinosaur.dinosaurexploder.components.OrangeDinoComponent;
 import com.dinosaur.dinosaurexploder.components.ScoreComponent;
+import com.dinosaur.dinosaurexploder.constants.Direction;
 import com.dinosaur.dinosaurexploder.constants.EntityType;
 import com.dinosaur.dinosaurexploder.constants.GameConstants;
 import com.dinosaur.dinosaurexploder.controller.BossSpawner;
@@ -49,14 +50,23 @@ public class ProjectileOrangeDinoCollision implements CollisionHandlerInterface 
         EntityType.PROJECTILE,
         EntityType.ORANGE_DINO,
         (projectile, orangeDino) -> {
-          spawn("explosion", orangeDino.getX() - 25, orangeDino.getY() - 30);
+          OrangeDinoComponent boss = orangeDino.getComponent(OrangeDinoComponent.class);
           projectile.removeFromWorld();
+          if (boss.getLives() <= 0) {
+            // another projectile already defeated the boss this frame
+            return;
+          }
+          spawn("explosion", orangeDino.getX() - 25, orangeDino.getY() - 30);
           AudioManager.getInstance().playSound(GameConstants.ENEMY_EXPLODE_SOUND);
-          collisionHandler.handleHitBoss(orangeDino.getComponent(OrangeDinoComponent.class));
+          // stronger weapons deal more damage, but lives never drop below zero
+          collisionHandler.handleHitBoss(
+              boss, Math.min(CollisionHandler.projectileDamage(projectile), boss.getLives()));
 
           if (orangeDino.getComponent(OrangeDinoComponent.class).getLives() == 0) {
             // if the boss is defeated it drops 100% a heart
             spawn("heart", orangeDino.getX(), orangeDino.getY());
+            // like the heart, the boss always drops a weapon upgrade until the weapon is maxed out
+            gameActions.dropWeaponUpgrade(orangeDino.getX() - 40, orangeDino.getY(), Direction.UP);
             // if the boss dino is defeated it drops twice as many coins as the current level
             for (int i = 0; i < levelManager.getCurrentLevel() * 2; i++) {
               spawn(

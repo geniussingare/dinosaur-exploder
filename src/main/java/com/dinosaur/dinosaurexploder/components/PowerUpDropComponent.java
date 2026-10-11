@@ -9,10 +9,10 @@ import com.almasb.fxgl.entity.component.Component;
 import com.dinosaur.dinosaurexploder.constants.Direction;
 
 /**
- * Summary : This handles the behaviour of a dropped cannon power-up. It drifts the same way as the
- * dinosaur that dropped it, and the player collects it to add a barrel to the cannon.
+ * Summary : This handles the behaviour of a dropped power-up (cannon or weapon upgrade). It drifts
+ * the same way as the dinosaur that dropped it until the player collects it.
  */
-public class CannonUpgradeDropComponent extends Component {
+public class PowerUpDropComponent extends Component {
   private static final double DROP_SPEED = 100.0;
   private double verticalSpeed = DROP_SPEED;
   private double horizontalSpeed = 0;

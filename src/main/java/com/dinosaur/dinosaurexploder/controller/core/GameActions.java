@@ -11,13 +11,16 @@ import static javafx.util.Duration.seconds;
 
 import com.almasb.fxgl.dsl.FXGL;
 import com.almasb.fxgl.entity.Entity;
+import com.almasb.fxgl.entity.SpawnData;
 import com.almasb.fxgl.particle.ParticleComponent;
 import com.almasb.fxgl.particle.ParticleEmitter;
 import com.almasb.fxgl.particle.ParticleEmitters;
 import com.dinosaur.dinosaurexploder.components.*;
+import com.dinosaur.dinosaurexploder.constants.Direction;
 import com.dinosaur.dinosaurexploder.constants.EntityType;
 import com.dinosaur.dinosaurexploder.model.CollisionHandler;
 import com.dinosaur.dinosaurexploder.model.GameData;
+import com.dinosaur.dinosaurexploder.model.WeaponUpgrade;
 import com.dinosaur.dinosaurexploder.utils.FXGLGameTimer;
 import com.dinosaur.dinosaurexploder.utils.GameTimer;
 import com.dinosaur.dinosaurexploder.utils.LanguageManager;
@@ -252,18 +255,34 @@ public class GameActions {
     return player.getComponent(PlayerComponent.class).isCannonMaxed();
   }
 
-  /** Briefly shows that the cannon gained a barrel, without pausing the game. */
-  public void showCannonUpgradeMessage() {
-    Text cannonText =
+  public boolean isWeaponMaxed() {
+    return player.getComponent(PlayerComponent.class).isWeaponMaxed();
+  }
+
+  /**
+   * Drops a weapon power-up for the next weapon tier at the given position, moving in the given
+   * direction. Does nothing once the player's weapon is at its highest tier.
+   */
+  public void dropWeaponUpgrade(double x, double y, Direction direction) {
+    if (isWeaponMaxed()) {
+      return;
+    }
+    int nextTier = WeaponUpgrade.next(player.getComponent(PlayerComponent.class).getWeaponTier());
+    Entity weaponUpgrade = FXGL.spawn("weaponUpgrade", new SpawnData(x, y).put("tier", nextTier));
+    weaponUpgrade.getComponent(PowerUpDropComponent.class).updateDirection(direction);
+  }
+
+  /** Briefly shows a power-up message (a translation key), without pausing the game. */
+  public void showPowerUpMessage(String translationKey) {
+    Text message =
         getUIFactoryService()
-            .newText(
-                languageManager.getTranslation("cannon_upgraded").toUpperCase(), Color.GOLD, 20);
-    cannonText.setStroke(Color.BLACK);
-    cannonText.setStrokeWidth(1.5);
-    TextUtils.centerText(cannonText);
-    cannonText.setTranslateY(40); // just below the centre, so it never covers a level message
-    getGameScene().addUINode(cannonText);
-    runOnce(() -> getGameScene().removeUINode(cannonText), seconds(1.5));
+            .newText(languageManager.getTranslation(translationKey).toUpperCase(), Color.GOLD, 20);
+    message.setStroke(Color.BLACK);
+    message.setStrokeWidth(1.5);
+    TextUtils.centerText(message);
+    message.setTranslateY(40); // just below the centre, so it never covers a level message
+    getGameScene().addUINode(message);
+    runOnce(() -> getGameScene().removeUINode(message), seconds(1.5));
   }
 
   public void regenerateBombe() {

@@ -18,6 +18,7 @@ import com.dinosaur.dinosaurexploder.constants.GameConstants;
 import com.dinosaur.dinosaurexploder.interfaces.Player;
 import com.dinosaur.dinosaurexploder.model.CannonUpgrade;
 import com.dinosaur.dinosaurexploder.model.GameData;
+import com.dinosaur.dinosaurexploder.model.WeaponUpgrade;
 import com.dinosaur.dinosaurexploder.utils.AudioManager;
 import com.dinosaur.dinosaurexploder.utils.FXGLGameTimer;
 import com.dinosaur.dinosaurexploder.utils.GameTimer;
@@ -55,10 +56,8 @@ public class PlayerComponent extends Component implements Player {
   private Circle shieldVisual;
 
   private final int selectedShip = GameData.getSelectedShip();
-  private final int selectedWeapon = GameData.getSelectedWeapon();
+  private int weaponTier = GameData.getSelectedWeapon();
   String shipImagePath = "assets/textures/spaceship" + selectedShip + ".png";
-  String weaponImagePath =
-      "/assets/textures/projectiles/projectile" + selectedShip + "_" + selectedWeapon + ".png";
   int movementSpeed = 8;
   private boolean isInvincible = false;
   private double weaponHeat = 0.0;
@@ -165,8 +164,7 @@ public class PlayerComponent extends Component implements Player {
     shootTimer.capture();
     shipImage =
         new Image(Objects.requireNonNull(getClass().getResourceAsStream("/" + shipImagePath)));
-    projectileImage =
-        new Image(Objects.requireNonNull(getClass().getResourceAsStream(weaponImagePath)));
+    loadProjectileImage();
   }
 
   @Override
@@ -297,7 +295,7 @@ public class PlayerComponent extends Component implements Player {
     double rotation = entity.getRotation();
     // Unit vector pointing to the ship's right, used to place side barrels next to each other
     Vec2 right = Vec2.fromAngle(rotation);
-    logger.info(() -> String.format("Shoot with selected weapon: %s", selectedWeapon));
+    logger.info(() -> String.format("Shoot with weapon tier: %s", weaponTier));
 
     for (CannonUpgrade.Barrel barrel : CannonUpgrade.barrels(cannonLevel)) {
       Vec2 direction = Vec2.fromAngle(rotation - 90 + barrel.angleOffset());
@@ -309,7 +307,8 @@ public class PlayerComponent extends Component implements Player {
                       + 3
                       + right.x * barrel.sideOffset(),
                   center.getY() - 25 + right.y * barrel.sideOffset())
-              .put("direction", direction.toPoint2D()));
+              .put("direction", direction.toPoint2D())
+              .put("weapon", weaponTier));
     }
     if (ally != null) {
       ally.shoot();
@@ -355,6 +354,30 @@ public class PlayerComponent extends Component implements Player {
   public void upgradeCannon() {
     cannonLevel = CannonUpgrade.next(cannonLevel);
     logger.info(() -> String.format("Cannon upgraded to level %d", cannonLevel));
+  }
+
+  /** Raises the weapon by one tier, up to {@link WeaponUpgrade#MAX_TIER}. */
+  public void upgradeWeapon() {
+    weaponTier = WeaponUpgrade.next(weaponTier);
+    loadProjectileImage();
+    logger.info(() -> String.format("Weapon upgraded to tier %d", weaponTier));
+  }
+
+  public int getWeaponTier() {
+    return weaponTier;
+  }
+
+  public boolean isWeaponMaxed() {
+    return WeaponUpgrade.isMaxed(weaponTier);
+  }
+
+  private void loadProjectileImage() {
+    projectileImage =
+        new Image(
+            Objects.requireNonNull(
+                getClass()
+                    .getResourceAsStream(
+                        WeaponUpgrade.projectileImagePath(selectedShip, weaponTier))));
   }
 
   public int getCannonLevel() {

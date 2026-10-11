@@ -27,10 +27,18 @@ public class ProjectileAsteroidsCollision implements CollisionHandlerInterface {
         EntityType.PROJECTILE,
         EntityType.ASTEROIDS,
         (projectile, asteroids) -> {
-          spawn("explosion", projectile.getX(), projectile.getY());
+          AsteroidsComponent asteroid = asteroids.getComponent(AsteroidsComponent.class);
           projectile.removeFromWorld();
+          if (asteroid.getLives() <= 0) {
+            // another projectile already destroyed this asteroid this frame
+            return;
+          }
+          spawn("explosion", projectile.getX(), projectile.getY());
 
-          collisionHandler.handleHitAsteroids(asteroids.getComponent(AsteroidsComponent.class));
+          // stronger weapons deal more damage, but lives never drop below zero
+          collisionHandler.handleHitAsteroids(
+              asteroid,
+              Math.min(CollisionHandler.projectileDamage(projectile), asteroid.getLives()));
           if (asteroids.getComponent(AsteroidsComponent.class).getLives() == 0) {
             asteroids.removeFromWorld();
           }

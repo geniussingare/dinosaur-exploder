@@ -5,6 +5,7 @@
 
 package com.dinosaur.dinosaurexploder.model;
 
+import com.almasb.fxgl.entity.Entity;
 import com.dinosaur.dinosaurexploder.achievements.AchievementEvent;
 import com.dinosaur.dinosaurexploder.achievements.AchievementManager;
 import com.dinosaur.dinosaurexploder.components.*;
@@ -33,11 +34,27 @@ public class CollisionHandler {
   }
 
   public void handleHitBoss(Dinosaur dinoComponent) {
-    dinoComponent.damage(1);
+    handleHitBoss(dinoComponent, 1);
+  }
+
+  public void handleHitBoss(Dinosaur dinoComponent, int damage) {
+    dinoComponent.damage(damage);
+  }
+
+  /**
+   * Returns how much damage a player projectile deals, based on the weapon tier that fired it.
+   * Projectiles without a damage value (such as the ally's) deal 1.
+   */
+  public static int projectileDamage(Entity projectile) {
+    return projectile.<Integer>getPropertyOptional(GameEntityFactory.PROJECTILE_DAMAGE).orElse(1);
   }
 
   public void handleHitAsteroids(Asteroids asteroidsComponent) {
-    asteroidsComponent.damage(1);
+    handleHitAsteroids(asteroidsComponent, 1);
+  }
+
+  public void handleHitAsteroids(Asteroids asteroidsComponent, int damage) {
+    asteroidsComponent.damage(damage);
   }
 
   public void handleBossDefeat(ScoreComponent scoreComponent) {

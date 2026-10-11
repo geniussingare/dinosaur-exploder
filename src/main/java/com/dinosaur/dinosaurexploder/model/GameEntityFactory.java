@@ -50,7 +50,11 @@ import javafx.util.Duration;
  */
 public class GameEntityFactory implements EntityFactory {
   private static final Logger logger = Logger.getLogger(GameEntityFactory.class.getName());
-  private static final double CANNON_UPGRADE_SIZE = 36.0;
+  private static final double POWER_UP_SIZE = 36.0;
+
+  /** Entity property holding how much damage a player projectile deals to bosses and asteroids. */
+  public static final String PROJECTILE_DAMAGE = "damage";
+
   Point2D direction;
 
   /** Summary : New Background creation will be handled in below Entity */
@@ -105,14 +109,12 @@ public class GameEntityFactory implements EntityFactory {
   @Spawns("basicProjectile")
   public Entity newBasicProjectile(SpawnData data) {
     updateDirection(data);
-    int selectedShip = GameData.getSelectedShip();
-    int selectedWeapon = GameData.getSelectedWeapon();
-    int speed = 600 * (selectedWeapon);
+    int weaponTier = data.hasKey("weapon") ? data.get("weapon") : GameData.getSelectedWeapon();
     String weaponImagePath =
-        "assets/textures/projectiles/projectile" + selectedShip + "_" + selectedWeapon + ".png";
+        WeaponUpgrade.projectileImagePath(GameData.getSelectedShip(), weaponTier);
 
     Image projectileImage =
-        new Image(Objects.requireNonNull(getClass().getResourceAsStream("/" + weaponImagePath)));
+        new Image(Objects.requireNonNull(getClass().getResourceAsStream(weaponImagePath)));
     return entityBuilderBase(data, EntityType.PROJECTILE)
         // The OffscreenCleanComponent is used because when the projectiles move, if
         // they
@@ -121,7 +123,8 @@ public class GameEntityFactory implements EntityFactory {
         .view(new ImageView(projectileImage))
         .bbox(new HitBox(BoundingShape.box(50, 50)))
         .collidable()
-        .with(new ProjectileComponent(direction, speed))
+        .with(new ProjectileComponent(direction, WeaponUpgrade.projectileSpeed(weaponTier)))
+        .with(PROJECTILE_DAMAGE, WeaponUpgrade.damage(weaponTier))
         .build();
   }
 
@@ -383,39 +386,60 @@ public class GameEntityFactory implements EntityFactory {
   }
 
   /**
-   * Summary : Spawn of a cannon power-up dropped by a dinosaur. It shows the player's own
-   * projectile inside a glowing ring.
+   * Summary : Spawn of a cannon power-up dropped by a dinosaur. It shows two of the player's
+   * projectiles side by side inside a gold ring.
    */
   @Spawns("cannonUpgrade")
   public Entity cannonUpgrade(SpawnData data) {
     String projectilePath =
-        "/assets/textures/projectiles/projectile"
-            + GameData.getSelectedShip()
-            + "_"
-            + GameData.getSelectedWeapon()
-            + ".png";
-    ImageView projectile =
-        new ImageView(
-            new Image(Objects.requireNonNull(getClass().getResourceAsStream(projectilePath))));
-    projectile.setFitHeight(CANNON_UPGRADE_SIZE * 0.6);
-    projectile.setPreserveRatio(true);
-    projectile.setTranslateX((CANNON_UPGRADE_SIZE - projectile.getBoundsInLocal().getWidth()) / 2);
-    projectile.setTranslateY(CANNON_UPGRADE_SIZE * 0.2);
+        WeaponUpgrade.projectileImagePath(GameData.getSelectedShip(), GameData.getSelectedWeapon());
+    ImageView left = powerUpIcon(projectilePath, -POWER_UP_SIZE * 0.15);
+    ImageView right = powerUpIcon(projectilePath, POWER_UP_SIZE * 0.15);
+    return powerUp(data, EntityType.CANNON_UPGRADE, Color.GOLD, Color.ORANGE, left, right);
+  }
 
-    Circle ring =
-        new Circle(CANNON_UPGRADE_SIZE / 2, CANNON_UPGRADE_SIZE / 2, CANNON_UPGRADE_SIZE / 2);
-    ring.setFill(Color.color(1.0, 0.6, 0.0, 0.25));
-    ring.setStroke(Color.GOLD);
+  /**
+   * Summary : Spawn of a weapon power-up dropped by a dinosaur. It shows the projectile of the next
+   * weapon tier (passed as "tier" in the spawn data) inside a cyan ring.
+   */
+  @Spawns("weaponUpgrade")
+  public Entity weaponUpgrade(SpawnData data) {
+    int tier = data.hasKey("tier") ? data.get("tier") : WeaponUpgrade.MAX_TIER;
+    ImageView icon =
+        powerUpIcon(WeaponUpgrade.projectileImagePath(GameData.getSelectedShip(), tier), 0);
+    return powerUp(data, EntityType.WEAPON_UPGRADE, Color.CYAN, Color.DEEPSKYBLUE, icon);
+  }
+
+  /** Builds a collectable power-up: the given icons inside a glowing ring. */
+  private Entity powerUp(
+      SpawnData data, EntityType type, Color ringColor, Color glowColor, ImageView... icons) {
+    Circle ring = new Circle(POWER_UP_SIZE / 2, POWER_UP_SIZE / 2, POWER_UP_SIZE / 2);
+    ring.setFill(Color.color(ringColor.getRed(), ringColor.getGreen(), ringColor.getBlue(), 0.25));
+    ring.setStroke(ringColor);
     ring.setStrokeWidth(3);
-    ring.setEffect(new DropShadow(15, Color.ORANGE));
+    ring.setEffect(new DropShadow(15, glowColor));
 
-    return entityBuilderBase(data, EntityType.CANNON_UPGRADE)
+    Group view = new Group(ring);
+    view.getChildren().addAll(icons);
+
+    return entityBuilderBase(data, type)
         .with(new OffscreenCleanComponent())
-        .view(new Group(ring, projectile))
-        .bbox(new HitBox(BoundingShape.box(CANNON_UPGRADE_SIZE, CANNON_UPGRADE_SIZE)))
+        .view(view)
+        .bbox(new HitBox(BoundingShape.box(POWER_UP_SIZE, POWER_UP_SIZE)))
         .collidable()
-        .with(new CannonUpgradeDropComponent())
+        .with(new PowerUpDropComponent())
         .build();
+  }
+
+  /** A projectile image sized to fit a power-up ring, shifted sideways by {@code offsetX}. */
+  private ImageView powerUpIcon(String imagePath, double offsetX) {
+    ImageView icon =
+        new ImageView(new Image(Objects.requireNonNull(getClass().getResourceAsStream(imagePath))));
+    icon.setFitHeight(POWER_UP_SIZE * 0.6);
+    icon.setPreserveRatio(true);
+    icon.setTranslateX((POWER_UP_SIZE - icon.getBoundsInLocal().getWidth()) / 2 + offsetX);
+    icon.setTranslateY(POWER_UP_SIZE * 0.2);
+    return icon;
   }
 
   @Spawns("ally")
