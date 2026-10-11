@@ -10,6 +10,7 @@ import static com.almasb.fxgl.dsl.FXGL.random;
 import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
 
 import com.almasb.fxgl.entity.Entity;
+import com.dinosaur.dinosaurexploder.components.CannonUpgradeDropComponent;
 import com.dinosaur.dinosaurexploder.components.CoinComponent;
 import com.dinosaur.dinosaurexploder.components.Heart;
 import com.dinosaur.dinosaurexploder.components.LevelProgressBarComponent;
@@ -61,6 +62,13 @@ public class ProjectileRedDinoCollision implements CollisionHandlerInterface {
             heart
                 .getComponent(Heart.class)
                 .updateDirection(redDino.getComponent(RedDinoComponent.class).getDirection());
+            // the boss also drops a cannon upgrade until the cannon is maxed out
+            if (!gameActions.isCannonMaxed()) {
+              Entity cannonUpgrade = spawn("cannonUpgrade", redDino.getX() + 40, redDino.getY());
+              cannonUpgrade
+                  .getComponent(CannonUpgradeDropComponent.class)
+                  .updateDirection(redDino.getComponent(RedDinoComponent.class).getDirection());
+            }
             // if the boss dino is defeated it drops as many coins as the current level
             for (int i = 0; i < levelManager.getCurrentLevel(); i++) {
               Entity coin =

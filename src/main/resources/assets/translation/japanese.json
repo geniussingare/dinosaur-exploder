@@ -26,6 +26,7 @@
   "coin": "コイン",
   "total_coins": "合計コイン数",
   "level": "レベル",
+  "cannon_upgraded": "キャノン強化！",
   "ship_locked" : "宇宙船はロックされています。",
   "weapon_locked" : "武器はロックされています。",
   "unlock_highScore" : "それを解除するには、ハイスコア##を達成してください。",

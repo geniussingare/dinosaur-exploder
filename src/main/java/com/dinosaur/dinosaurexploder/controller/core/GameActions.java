@@ -248,6 +248,24 @@ public class GameActions {
     sessionTimer.pause();
   }
 
+  public boolean isCannonMaxed() {
+    return player.getComponent(PlayerComponent.class).isCannonMaxed();
+  }
+
+  /** Briefly shows that the cannon gained a barrel, without pausing the game. */
+  public void showCannonUpgradeMessage() {
+    Text cannonText =
+        getUIFactoryService()
+            .newText(
+                languageManager.getTranslation("cannon_upgraded").toUpperCase(), Color.GOLD, 20);
+    cannonText.setStroke(Color.BLACK);
+    cannonText.setStrokeWidth(1.5);
+    TextUtils.centerText(cannonText);
+    cannonText.setTranslateY(40); // just below the centre, so it never covers a level message
+    getGameScene().addUINode(cannonText);
+    runOnce(() -> getGameScene().removeUINode(cannonText), seconds(1.5));
+  }
+
   public void regenerateBombe() {
     if (bomb.hasComponent(BombComponent.class)) {
       bomb.getComponent(BombComponent.class)

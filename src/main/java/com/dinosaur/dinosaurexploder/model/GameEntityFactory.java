@@ -34,9 +34,11 @@ import java.util.logging.Logger;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -48,6 +50,7 @@ import javafx.util.Duration;
  */
 public class GameEntityFactory implements EntityFactory {
   private static final Logger logger = Logger.getLogger(GameEntityFactory.class.getName());
+  private static final double CANNON_UPGRADE_SIZE = 36.0;
   Point2D direction;
 
   /** Summary : New Background creation will be handled in below Entity */
@@ -376,6 +379,42 @@ public class GameEntityFactory implements EntityFactory {
         .bbox(new HitBox(BoundingShape.box(50, 50)))
         .collidable()
         .with(new AllyDropComponent())
+        .build();
+  }
+
+  /**
+   * Summary : Spawn of a cannon power-up dropped by a dinosaur. It shows the player's own
+   * projectile inside a glowing ring.
+   */
+  @Spawns("cannonUpgrade")
+  public Entity cannonUpgrade(SpawnData data) {
+    String projectilePath =
+        "/assets/textures/projectiles/projectile"
+            + GameData.getSelectedShip()
+            + "_"
+            + GameData.getSelectedWeapon()
+            + ".png";
+    ImageView projectile =
+        new ImageView(
+            new Image(Objects.requireNonNull(getClass().getResourceAsStream(projectilePath))));
+    projectile.setFitHeight(CANNON_UPGRADE_SIZE * 0.6);
+    projectile.setPreserveRatio(true);
+    projectile.setTranslateX((CANNON_UPGRADE_SIZE - projectile.getBoundsInLocal().getWidth()) / 2);
+    projectile.setTranslateY(CANNON_UPGRADE_SIZE * 0.2);
+
+    Circle ring =
+        new Circle(CANNON_UPGRADE_SIZE / 2, CANNON_UPGRADE_SIZE / 2, CANNON_UPGRADE_SIZE / 2);
+    ring.setFill(Color.color(1.0, 0.6, 0.0, 0.25));
+    ring.setStroke(Color.GOLD);
+    ring.setStrokeWidth(3);
+    ring.setEffect(new DropShadow(15, Color.ORANGE));
+
+    return entityBuilderBase(data, EntityType.CANNON_UPGRADE)
+        .with(new OffscreenCleanComponent())
+        .view(new Group(ring, projectile))
+        .bbox(new HitBox(BoundingShape.box(CANNON_UPGRADE_SIZE, CANNON_UPGRADE_SIZE)))
+        .collidable()
+        .with(new CannonUpgradeDropComponent())
         .build();
   }
 

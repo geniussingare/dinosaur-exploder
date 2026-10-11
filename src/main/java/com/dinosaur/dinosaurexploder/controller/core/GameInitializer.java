@@ -11,6 +11,7 @@ import static com.almasb.fxgl.dsl.FXGLForKtKt.spawn;
 import com.almasb.fxgl.dsl.FXGL;
 import com.almasb.fxgl.entity.Entity;
 import com.almasb.fxgl.entity.SpawnData;
+import com.almasb.fxgl.input.UserAction;
 import com.dinosaur.dinosaurexploder.achievements.AchievementManager;
 import com.dinosaur.dinosaurexploder.components.BombComponent;
 import com.dinosaur.dinosaurexploder.components.CollectedCoinsComponent;
@@ -62,7 +63,10 @@ public class GameInitializer {
     onKey(KeyCode.LEFT, () -> player.getComponent(PlayerComponent.class).moveLeft());
     onKey(KeyCode.RIGHT, () -> player.getComponent(PlayerComponent.class).moveRight());
 
-    onKeyDown(KeyCode.SPACE, () -> player.getComponent(PlayerComponent.class).shoot());
+    // Tap to shoot once, hold to keep firing
+    onKeyBuilder(KeyCode.SPACE)
+        .onActionBegin(() -> player.getComponent(PlayerComponent.class).pressTrigger())
+        .onActionEnd(() -> player.getComponent(PlayerComponent.class).releaseTrigger());
 
     // Shield activation (your feature)
     onKeyDown(KeyCode.E, () -> player.getComponent(PlayerComponent.class).activateShield());
@@ -73,8 +77,21 @@ public class GameInitializer {
     onKey(KeyCode.D, () -> player.getComponent(PlayerComponent.class).moveRight());
 
     if (GameData.getSelectedDifficulty() == GameMode.EXPERT) {
-      // Expert mode already aims with the mouse, so let players hold left click to keep firing.
-      onBtn(MouseButton.PRIMARY, () -> player.getComponent(PlayerComponent.class).shoot());
+      // Expert mode already aims with the mouse, so left click shoots the same way as Space.
+      getInput()
+          .addAction(
+              new UserAction("Shoot with mouse") {
+                @Override
+                protected void onActionBegin() {
+                  player.getComponent(PlayerComponent.class).pressTrigger();
+                }
+
+                @Override
+                protected void onActionEnd() {
+                  player.getComponent(PlayerComponent.class).releaseTrigger();
+                }
+              },
+              MouseButton.PRIMARY);
     }
 
     onKeyDown(KeyCode.B, () -> bomb.getComponent(BombComponent.class).useBomb(player));

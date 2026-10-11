@@ -69,7 +69,9 @@ class DinosaurControllerTest {
         MockedConstruction<AllyOrangeDinoCollision> c16 =
             mockConstruction(AllyOrangeDinoCollision.class);
         MockedConstruction<AllyGreenDinoCollision> c17 =
-            mockConstruction(AllyGreenDinoCollision.class); ) {
+            mockConstruction(AllyGreenDinoCollision.class);
+        MockedConstruction<PlayerCannonUpgradeCollision> c18 =
+            mockConstruction(PlayerCannonUpgradeCollision.class); ) {
 
       DinosaurController controller = new DinosaurController();
 
@@ -81,7 +83,7 @@ class DinosaurControllerTest {
 
       controller.initPhysics();
 
-      verify(registry, times(17)).addCollision(any());
+      verify(registry, times(18)).addCollision(any());
 
       verify(registry).registerAll();
 
@@ -102,6 +104,7 @@ class DinosaurControllerTest {
       verify(registry).addCollision(c15.constructed().get(0));
       verify(registry).addCollision(c16.constructed().get(0));
       verify(registry).addCollision(c17.constructed().get(0));
+      verify(registry).addCollision(c18.constructed().get(0));
     }
   }
 }
