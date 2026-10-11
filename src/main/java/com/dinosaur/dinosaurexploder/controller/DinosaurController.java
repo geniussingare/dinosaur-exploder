@@ -61,6 +61,8 @@ public class DinosaurController {
     collisionRegistry.addCollision(new PlayerAsteroidsCollision(gameActions));
     collisionRegistry.addCollision(new ProjectileAsteroidsCollision(gameInitializer));
     collisionRegistry.addCollision(new PlayerAllyDropCollision(gameActions));
+    collisionRegistry.addCollision(new PlayerCannonUpgradeCollision(gameActions));
+    collisionRegistry.addCollision(new PlayerWeaponUpgradeCollision(gameActions));
     collisionRegistry.addCollision(new AllyAsteroidsCollision((gameActions)));
     collisionRegistry.addCollision(new AllyRedDinoCollision((gameActions)));
     collisionRegistry.addCollision(new AllyOrangeDinoCollision((gameActions)));

@@ -26,4 +26,6 @@ public enum EntityType {
   ASTEROIDS,
   ALLY_DROP,
   ALLY,
+  CANNON_UPGRADE,
+  WEAPON_UPGRADE,
 }

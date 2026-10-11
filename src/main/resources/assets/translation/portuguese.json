@@ -26,6 +26,8 @@
   "coin": "Moeda",
   "total_coins": "Total de moedas",
   "level": "Nível",
+  "cannon_upgraded": "Canhão melhorado!",
+  "weapon_upgraded": "Arma melhorada!",
   "ship_locked": "Nave bloqueada.",
   "weapon_locked": "Arma bloqueada.",
   "unlock_highScore": "Alcance uma pontuação de ## para desbloquear.",

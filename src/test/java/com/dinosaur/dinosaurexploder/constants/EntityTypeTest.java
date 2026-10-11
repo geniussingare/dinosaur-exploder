@@ -14,7 +14,7 @@ public class EntityTypeTest {
   @Test
   public void entityTest() {
     EntityType[] values = EntityType.values();
-    assertEquals(19, values.length, "EntityType count should match");
+    assertEquals(21, values.length, "EntityType count should match");
 
     assertArrayEquals(
         new EntityType[] {
@@ -37,6 +37,8 @@ public class EntityTypeTest {
           EntityType.ASTEROIDS,
           EntityType.ALLY_DROP,
           EntityType.ALLY,
+          EntityType.CANNON_UPGRADE,
+          EntityType.WEAPON_UPGRADE,
         },
         values);
   }

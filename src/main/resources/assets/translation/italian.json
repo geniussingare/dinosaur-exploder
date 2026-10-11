@@ -27,6 +27,8 @@
   "coin": "Moneta",
   "total_coins": "Monete totali",
   "level": "Livello",
+  "cannon_upgraded": "Cannone potenziato!",
+  "weapon_upgraded": "Arma potenziata!",
   "ship_locked": "L'astronave è bloccata.",
   "weapon_locked": "L'arma è bloccata.",
   "unlock_highScore": "Raggiungi un record di ## per sbloccarla.",

@@ -21,6 +21,8 @@ import java.util.logging.Logger;
 
 public class ProjectileGreenDinoCollision implements CollisionHandlerInterface {
 
+  private static final int CANNON_UPGRADE_DROP_PERCENT = 3;
+
   private final GameActions gameActions;
 
   private final CollisionHandler collisionHandler;
@@ -52,6 +54,19 @@ public class ProjectileGreenDinoCollision implements CollisionHandlerInterface {
           if (random(0, 100) < 1 && !gameActions.isAllyUse()) {
             Entity ally = spawn("allyDrop", greenDino.getX(), greenDino.getY());
             ally.getComponent(AllyDropComponent.class)
+                .updateDirection(greenDino.getComponent(GreenDinoComponent.class).getDirection());
+          }
+          // weapon upgrades drop as often as hearts
+          if (random(0, 100) < 5) {
+            gameActions.dropWeaponUpgrade(
+                greenDino.getX() + 20,
+                greenDino.getY(),
+                greenDino.getComponent(GreenDinoComponent.class).getDirection());
+          }
+          if (random(0, 100) < CANNON_UPGRADE_DROP_PERCENT && !gameActions.isCannonMaxed()) {
+            Entity cannonUpgrade = spawn("cannonUpgrade", greenDino.getX(), greenDino.getY());
+            cannonUpgrade
+                .getComponent(PowerUpDropComponent.class)
                 .updateDirection(greenDino.getComponent(GreenDinoComponent.class).getDirection());
           }
           AudioManager.getInstance().playSound(GameConstants.ENEMY_EXPLODE_SOUND);

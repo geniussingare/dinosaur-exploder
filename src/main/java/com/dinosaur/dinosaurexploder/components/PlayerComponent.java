@@ -16,7 +16,9 @@ import com.almasb.fxgl.texture.Texture;
 import com.almasb.fxgl.time.TimerAction;
 import com.dinosaur.dinosaurexploder.constants.GameConstants;
 import com.dinosaur.dinosaurexploder.interfaces.Player;
+import com.dinosaur.dinosaurexploder.model.CannonUpgrade;
 import com.dinosaur.dinosaurexploder.model.GameData;
+import com.dinosaur.dinosaurexploder.model.WeaponUpgrade;
 import com.dinosaur.dinosaurexploder.utils.AudioManager;
 import com.dinosaur.dinosaurexploder.utils.FXGLGameTimer;
 import com.dinosaur.dinosaurexploder.utils.GameTimer;
@@ -38,6 +40,9 @@ public class PlayerComponent extends Component implements Player {
   private static final double COOLING_RATE_PER_SECOND = 30.0;
   private static final double SLOWDOWN_THRESHOLD = 90.0;
   private static final double SLOWED_SHOT_COOLDOWN_SECONDS = 0.28;
+  // Holding the shoot button keeps firing once it has been held this long, at this interval.
+  private static final double AUTO_FIRE_DELAY_SECONDS = 0.25;
+  private static final double AUTO_FIRE_INTERVAL_SECONDS = 0.15;
   private static final String OUT_OF_BOUNDS = "Out of bounds";
 
   // Shield fields
@@ -51,14 +56,15 @@ public class PlayerComponent extends Component implements Player {
   private Circle shieldVisual;
 
   private final int selectedShip = GameData.getSelectedShip();
-  private final int selectedWeapon = GameData.getSelectedWeapon();
+  private int weaponTier = GameData.getSelectedWeapon();
   String shipImagePath = "assets/textures/spaceship" + selectedShip + ".png";
-  String weaponImagePath =
-      "/assets/textures/projectiles/projectile" + selectedShip + "_" + selectedWeapon + ".png";
   int movementSpeed = 8;
   private boolean isInvincible = false;
   private double weaponHeat = 0.0;
   private final GameTimer shootTimer;
+  private int cannonLevel = CannonUpgrade.MIN_LEVEL;
+  private boolean triggerHeld = false;
+  private double triggerHeldSeconds = 0.0;
 
   // cached Images to prevent memory load
   private Image shipImage;
@@ -158,13 +164,13 @@ public class PlayerComponent extends Component implements Player {
     shootTimer.capture();
     shipImage =
         new Image(Objects.requireNonNull(getClass().getResourceAsStream("/" + shipImagePath)));
-    projectileImage =
-        new Image(Objects.requireNonNull(getClass().getResourceAsStream(weaponImagePath)));
+    loadProjectileImage();
   }
 
   @Override
   public void onUpdate(double tpf) {
     coolWeapon(tpf);
+    updateAutoFire(tpf);
     if (ally != null && ally.getDuration() <= 0) {
       ally.getEntity().removeFromWorld();
       ally = null;
@@ -286,18 +292,100 @@ public class PlayerComponent extends Component implements Player {
 
     AudioManager.getInstance().playSound(GameConstants.SHOOT_SOUND);
     Point2D center = entity.getCenter();
-    Vec2 direction = Vec2.fromAngle(entity.getRotation() - 90);
-    logger.info(() -> String.format("Shoot with selected weapon: %s", selectedWeapon));
+    double rotation = entity.getRotation();
+    // Unit vector pointing to the ship's right, used to place side barrels next to each other
+    Vec2 right = Vec2.fromAngle(rotation);
+    logger.info(() -> String.format("Shoot with weapon tier: %s", weaponTier));
 
-    spawn(
-        "basicProjectile",
-        new SpawnData(center.getX() - (projectileImage.getWidth() / 2) + 3, center.getY() - 25)
-            .put("direction", direction.toPoint2D()));
+    for (CannonUpgrade.Barrel barrel : CannonUpgrade.barrels(cannonLevel)) {
+      Vec2 direction = Vec2.fromAngle(rotation - 90 + barrel.angleOffset());
+      spawn(
+          "basicProjectile",
+          new SpawnData(
+                  center.getX()
+                      - (projectileImage.getWidth() / 2)
+                      + 3
+                      + right.x * barrel.sideOffset(),
+                  center.getY() - 25 + right.y * barrel.sideOffset())
+              .put("direction", direction.toPoint2D())
+              .put("weapon", weaponTier));
+    }
     if (ally != null) {
       ally.shoot();
     }
     increaseWeaponHeat();
     shootTimer.capture();
+  }
+
+  /** Called when the shoot button is pressed: fires once and starts the hold-to-fire timer. */
+  public void pressTrigger() {
+    triggerHeld = true;
+    triggerHeldSeconds = 0.0;
+    shoot();
+  }
+
+  /** Called when the shoot button is released: stops automatic fire. */
+  public void releaseTrigger() {
+    triggerHeld = false;
+    triggerHeldSeconds = 0.0;
+  }
+
+  public boolean isTriggerHeld() {
+    return triggerHeld;
+  }
+
+  /**
+   * Keeps firing while the shoot button is held. A quick tap only fires the single shot from {@link
+   * #pressTrigger()}; after {@link #AUTO_FIRE_DELAY_SECONDS} the cannon fires every {@link
+   * #AUTO_FIRE_INTERVAL_SECONDS}, still limited by weapon heat.
+   */
+  void updateAutoFire(double tpf) {
+    if (!triggerHeld) {
+      return;
+    }
+    triggerHeldSeconds += tpf;
+    if (triggerHeldSeconds >= AUTO_FIRE_DELAY_SECONDS
+        && shootTimer.isElapsed(Duration.seconds(AUTO_FIRE_INTERVAL_SECONDS))) {
+      shoot();
+    }
+  }
+
+  /** Raises the cannon by one level, up to {@link CannonUpgrade#MAX_LEVEL}. */
+  public void upgradeCannon() {
+    cannonLevel = CannonUpgrade.next(cannonLevel);
+    logger.info(() -> String.format("Cannon upgraded to level %d", cannonLevel));
+  }
+
+  /** Raises the weapon by one tier, up to {@link WeaponUpgrade#MAX_TIER}. */
+  public void upgradeWeapon() {
+    weaponTier = WeaponUpgrade.next(weaponTier);
+    loadProjectileImage();
+    logger.info(() -> String.format("Weapon upgraded to tier %d", weaponTier));
+  }
+
+  public int getWeaponTier() {
+    return weaponTier;
+  }
+
+  public boolean isWeaponMaxed() {
+    return WeaponUpgrade.isMaxed(weaponTier);
+  }
+
+  private void loadProjectileImage() {
+    projectileImage =
+        new Image(
+            Objects.requireNonNull(
+                getClass()
+                    .getResourceAsStream(
+                        WeaponUpgrade.projectileImagePath(selectedShip, weaponTier))));
+  }
+
+  public int getCannonLevel() {
+    return cannonLevel;
+  }
+
+  public boolean isCannonMaxed() {
+    return CannonUpgrade.isMaxed(cannonLevel);
   }
 
   private void spawnMovementAnimation() {

@@ -26,6 +26,8 @@
     "coin": "Pièce",
     "total_coins": "Total des pièces",
     "level": "Niveau",
+    "cannon_upgraded": "Canon amélioré !",
+    "weapon_upgraded": "Arme améliorée !",
     "ship_locked" : "Le vaisseau est verrouillé.",
     "weapon_locked" : "L'arme est verrouillée.",
     "unlock_highScore" : "Pour le déverrouiller, atteignez un score élevé de ##.",

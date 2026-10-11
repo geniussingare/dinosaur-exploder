@@ -13,6 +13,7 @@ import com.almasb.fxgl.entity.Entity;
 import com.dinosaur.dinosaurexploder.components.CoinComponent;
 import com.dinosaur.dinosaurexploder.components.Heart;
 import com.dinosaur.dinosaurexploder.components.LevelProgressBarComponent;
+import com.dinosaur.dinosaurexploder.components.PowerUpDropComponent;
 import com.dinosaur.dinosaurexploder.components.RedDinoComponent;
 import com.dinosaur.dinosaurexploder.components.ScoreComponent;
 import com.dinosaur.dinosaurexploder.constants.EntityType;
@@ -50,10 +51,17 @@ public class ProjectileRedDinoCollision implements CollisionHandlerInterface {
         EntityType.PROJECTILE,
         EntityType.RED_DINO,
         (projectile, redDino) -> {
-          spawn("explosion", redDino.getX() - 25, redDino.getY() - 30);
+          RedDinoComponent boss = redDino.getComponent(RedDinoComponent.class);
           projectile.removeFromWorld();
+          if (boss.getLives() <= 0) {
+            // another projectile already defeated the boss this frame
+            return;
+          }
+          spawn("explosion", redDino.getX() - 25, redDino.getY() - 30);
           AudioManager.getInstance().playSound(GameConstants.ENEMY_EXPLODE_SOUND);
-          collisionHandler.handleHitBoss(redDino.getComponent(RedDinoComponent.class));
+          // stronger weapons deal more damage, but lives never drop below zero
+          collisionHandler.handleHitBoss(
+              boss, Math.min(CollisionHandler.projectileDamage(projectile), boss.getLives()));
 
           if (redDino.getComponent(RedDinoComponent.class).getLives() == 0) {
             // if the boss is defeated it drops 100% a heart
@@ -61,6 +69,18 @@ public class ProjectileRedDinoCollision implements CollisionHandlerInterface {
             heart
                 .getComponent(Heart.class)
                 .updateDirection(redDino.getComponent(RedDinoComponent.class).getDirection());
+            // like the heart, the boss always drops a weapon upgrade until the weapon is maxed out
+            gameActions.dropWeaponUpgrade(
+                redDino.getX() - 40,
+                redDino.getY(),
+                redDino.getComponent(RedDinoComponent.class).getDirection());
+            // the boss also drops a cannon upgrade until the cannon is maxed out
+            if (!gameActions.isCannonMaxed()) {
+              Entity cannonUpgrade = spawn("cannonUpgrade", redDino.getX() + 40, redDino.getY());
+              cannonUpgrade
+                  .getComponent(PowerUpDropComponent.class)
+                  .updateDirection(redDino.getComponent(RedDinoComponent.class).getDirection());
+            }
             // if the boss dino is defeated it drops as many coins as the current level
             for (int i = 0; i < levelManager.getCurrentLevel(); i++) {
               Entity coin =
